@@ -1,0 +1,103 @@
+<app-site-header />
+
+<main class="pg-main" aria-labelledby="ct-title">
+  <p class="pg-eyebrow">Contact</p>
+  <h1 class="pg-title" id="ct-title">Une question&nbsp;? <span class="accent">Écrivez-nous.</span></h1>
+  <p class="pg-lead">
+    Pour une question sur la plateforme, un problème technique ou un projet de partenariat, remplissez le formulaire.
+    Pour un problème urbain précis, utilisez plutôt « Signaler un problème » depuis la carte.
+  </p>
+
+  <div class="layout">
+    <section class="pg-card" aria-labelledby="form-title">
+      @if (sent()) {
+        <div class="ok" role="status">
+          <span class="check" aria-hidden="true">✓</span>
+          <h2 class="pg-h2" id="form-title">Message envoyé</h2>
+          <p>Merci, nous avons bien reçu votre message et nous vous répondrons dès que possible.</p>
+          <button type="button" class="pg-btn pg-btn--outline" (click)="again()">Envoyer un autre message</button>
+        </div>
+      } @else {
+        <h2 class="pg-h2" id="form-title">Votre message</h2>
+
+        @if (error()) {
+          <p class="alert" role="alert">{{ error() }}</p>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="field">
+            <label for="c-name">Nom complet</label>
+            <input id="c-name" type="text" autocomplete="name" formControlName="name" [attr.aria-invalid]="invalid('name') ? 'true' : null" />
+            @if (invalid('name')) {
+              <p class="err">Saisissez votre nom (2 caractères minimum).</p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="c-email">E-mail</label>
+            <input id="c-email" type="email" inputmode="email" autocomplete="email" formControlName="email" [attr.aria-invalid]="invalid('email') ? 'true' : null" />
+            @if (invalid('email')) {
+              <p class="err">Saisissez une adresse e-mail valide.</p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="c-subject">Sujet</label>
+            <select id="c-subject" formControlName="subject">
+              @for (s of subjects; track s) {
+                <option [value]="s">{{ s }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="c-message">Message</label>
+            <textarea id="c-message" rows="6" formControlName="message" [attr.aria-invalid]="invalid('message') ? 'true' : null"></textarea>
+            @if (invalid('message')) {
+              <p class="err">Votre message doit contenir au moins 10 caractères.</p>
+            }
+          </div>
+
+          <div class="field">
+            <label class="check-row">
+              <input type="checkbox" formControlName="consent" />
+              <span>J’accepte que mes informations soient utilisées uniquement pour répondre à ma demande.</span>
+            </label>
+            @if (invalid('consent')) {
+              <p class="err">Ce consentement est nécessaire pour envoyer le message.</p>
+            }
+          </div>
+
+          <button class="pg-btn pg-btn--primary" type="submit" [disabled]="loading()">
+            {{ loading() ? 'Envoi…' : 'Envoyer le message' }}
+          </button>
+        </form>
+      }
+    </section>
+
+    <aside class="side">
+      <div class="pg-card">
+        <h2 class="pg-h2">Contacter un organisme</h2>
+        <p>
+          Chaque organisme partenaire publie son propre contact (e-mail, téléphone, horaires) sur sa page.
+        </p>
+        <a class="pg-btn pg-btn--outline" routerLink="/organismes">Voir les organismes</a>
+      </div>
+
+      <div class="pg-card">
+        <h2 class="pg-h2">À propos du projet</h2>
+        <p>
+          MADINTY est un projet pédagogique de Sup’Com (Groupe 4), encadré par Dr. Maroua Nouioua. Les données affichées
+          sont fictives et clairement identifiées comme telles.
+        </p>
+      </div>
+
+      <p class="pg-note">
+        MADINTY ne remplace pas les services officiels. En cas d’urgence (danger immédiat, fuite de gaz, câble au sol),
+        contactez directement les services compétents.
+      </p>
+    </aside>
+  </div>
+</main>
+
+<app-site-footer />

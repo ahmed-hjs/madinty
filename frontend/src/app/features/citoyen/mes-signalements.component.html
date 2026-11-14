@@ -1,0 +1,75 @@
+<app-site-header />
+
+<main class="pg-main wrap">
+  <div class="top">
+    <div>
+      <p class="pg-eyebrow">Espace citoyen</p>
+      <h1 class="pg-title">Mes signalements</h1>
+    </div>
+    <a class="pg-btn pg-btn--primary" routerLink="/citoyen/nouveau">+ Signaler un problème</a>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Filtrer mes signalements">
+    @for (t of tabs; track t.id) {
+      <button type="button" role="tab" [class.on]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="tab.set(t.id)">
+        {{ t.label }}
+        @if (t.id === 'confirm' && confirmCount() > 0) { <span class="badge">{{ confirmCount() }}</span> }
+      </button>
+    }
+  </div>
+
+  @if (actionError(); as e) { <p class="err" role="alert">{{ e }}</p> }
+
+  @if (loading()) {
+    <p class="pg-state" role="status">Chargement…</p>
+  } @else if (error(); as e) {
+    <div class="pg-state" role="alert">
+      <p>{{ e }}</p>
+      <button type="button" class="pg-btn pg-btn--outline" (click)="load()">Réessayer</button>
+    </div>
+  } @else if (tab() === 'supported') {
+    @if (supported().length === 0) {
+      <p class="pg-state">Vous n’avez soutenu aucun signalement pour l’instant. Ouvrez la carte et touchez « Soutenir » sur un dossier.</p>
+    }
+    <ul class="list">
+      @for (s of supported(); track s.id) {
+        <li class="pg-card item">
+          <a class="main" [routerLink]="['/signalements', s.reference]">
+            <strong>{{ s.title }}</strong>
+            <span class="meta">#{{ s.reference }} · {{ s.category_label }} · soutenu</span>
+          </a>
+          <span [class]="'pill-status st-' + statusId(s.status)">{{ label(s.status) }}</span>
+        </li>
+      }
+    </ul>
+  } @else {
+    @if (visible().length === 0) {
+      <div class="pg-state">
+        <p>Aucun signalement dans cette vue.</p>
+        @if (tab() === 'all') { <a class="pg-btn pg-btn--primary" routerLink="/citoyen/nouveau">Signaler un problème</a> }
+      </div>
+    }
+    <ul class="list">
+      @for (m of visible(); track m.id) {
+        <li class="pg-card item">
+          <a class="main" [routerLink]="['/signalements', m.reference]">
+            <strong>{{ m.title }}</strong>
+            <span class="meta">#{{ m.reference }} · {{ m.category_label }} · {{ m.organization_name }} · {{ ago(m.created_at) }}</span>
+            <span class="meta">♥ {{ m.supports_count }} {{ m.supports_count > 1 ? 'soutiens' : 'soutien' }}</span>
+          </a>
+          <div class="side">
+            <span [class]="'pill-status st-' + statusId(m.status)">{{ label(m.status) }}</span>
+            @if (toConfirm(m)) {
+              <button type="button" class="ok" [disabled]="busyId() === m.id" (click)="confirm(m)">
+                {{ busyId() === m.id ? 'Envoi…' : '✓ C’est réglé' }}
+              </button>
+              <a class="no" [routerLink]="['/signalements', m.reference]" fragment="verification">Ce n’est pas réglé</a>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</main>
+
+<app-site-footer />

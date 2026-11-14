@@ -1,0 +1,50 @@
+<div class="icon-circle" aria-hidden="true">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </svg>
+</div>
+<h1 class="title title--center" id="am-title">Mot de passe oublié ?</h1>
+<p class="subtitle subtitle--center">Saisissez votre e-mail. Nous vous enverrons un lien de réinitialisation.</p>
+
+@if (error()) {
+  <p class="alert alert--error" role="alert">{{ error() }}</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="field">
+    <label class="label" for="forgot-email">E-mail</label>
+    <input
+      class="input"
+      id="forgot-email"
+      type="email"
+      inputmode="email"
+      autocomplete="email"
+      formControlName="email"
+      [attr.aria-invalid]="showError() ? 'true' : null"
+      [attr.aria-describedby]="showError() ? 'forgot-email-err' : null"
+    />
+    @if (showError()) {
+      <p class="field-error" id="forgot-email-err">{{ emailMessage() }}</p>
+    }
+  </div>
+
+  @if (!sent()) {
+    <button class="btn btn--primary" type="submit" [disabled]="loading()">
+      {{ loading() ? 'Envoi…' : 'Envoyer le lien' }}
+    </button>
+  } @else {
+    <button class="btn btn--outline" type="submit" [disabled]="loading() || cooldown() > 0">
+      {{ cooldown() > 0 ? 'Renvoyer le lien · ' + cooldown() + ' s' : 'Renvoyer le lien' }}
+    </button>
+  }
+</form>
+
+@if (sent()) {
+  <p class="alert alert--info alert--spaced" role="status">
+    Si un compte existe pour {{ masked() }}, un e-mail vient d’être envoyé. Le lien est valable 30 minutes.
+  </p>
+  <a class="btn btn--primary mobile-only" href="mailto:">Ouvrir ma messagerie</a>
+}
+
+<button type="button" class="link link--center" (click)="modal.show('login')">← Retour à la connexion</button>

@@ -1,0 +1,139 @@
+<app-site-header />
+
+<main class="pg-main">
+  <a class="back" routerLink="/organismes">← Tous les organismes</a>
+
+  @if (loading()) {
+    <p class="pg-state" role="status">Chargement…</p>
+  } @else if (error() === 'notfound') {
+    <div class="pg-state" role="alert">
+      <h1 class="pg-h2">Organisme introuvable</h1>
+      <p>Cette page n’existe pas ou l’organisme n’est plus référencé.</p>
+      <a class="pg-btn pg-btn--primary" routerLink="/organismes">Voir les organismes</a>
+    </div>
+  } @else if (error() === 'network') {
+    <div class="pg-state" role="alert">
+      <p>Impossible de charger cette page pour le moment.</p>
+      <button type="button" class="pg-btn pg-btn--outline" (click)="load()">Réessayer</button>
+    </div>
+  } @else if (org(); as o) {
+    <section class="head" aria-labelledby="org-name">
+      <span class="pg-org-avatar big" aria-hidden="true">{{ initials(o.organisme.name) }}</span>
+      <div>
+        <h1 class="pg-title" id="org-name">{{ o.organisme.name }}</h1>
+        <p class="sub">{{ o.organisme.type }} · organisme partenaire · territoire pilote · données fictives de démonstration</p>
+      </div>
+    </section>
+    <p class="pg-lead">{{ o.organisme.description }}</p>
+
+    <section class="pg-section" aria-labelledby="dom">
+      <h2 class="pg-h2" id="dom">Domaines d’intervention</h2>
+      @if (o.domaines.length) {
+        <ul class="chips">
+          @for (d of o.domaines; track d.id) {
+            <li class="pg-chip">
+              <span class="dot" [style.background]="visual(d.label).color">
+                @if (visual(d.label).icon; as icon) {
+                  <app-icon [name]="icon" [size]="14" [stroke]="2.2" />
+                } @else {
+                  {{ d.label.charAt(0) }}
+                }
+              </span>
+              {{ d.label }}
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">Aucun domaine d’intervention renseigné.</p>
+      }
+    </section>
+
+    <section class="pg-section" aria-labelledby="stats">
+      <h2 class="pg-h2" id="stats">Statistiques publiques</h2>
+      <div class="stats">
+        <div class="stat pg-card">
+          <span>Signalements reçus</span>
+          <strong>{{ o.statistiques.signalements }}</strong>
+        </div>
+        <div class="stat pg-card">
+          <span>Résolus</span>
+          <strong class="green">{{ o.statistiques.taux_resolution }} %</strong>
+        </div>
+        <div class="stat pg-card">
+          <span>Délai médian</span>
+          <strong class="blue">{{ days(o.statistiques.delai_median_jours) }}</strong>
+        </div>
+        <div class="stat pg-card">
+          <span>En attente</span>
+          <strong>{{ o.statistiques.en_attente }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="cols pg-section">
+      <section class="pg-card" aria-labelledby="cat">
+        <div class="card-head">
+          <h2 class="pg-h2" id="cat">Par catégorie</h2>
+          <span class="muted small">6 derniers mois · agrégé</span>
+        </div>
+        @if (bars().length) {
+          <ul class="bars" aria-label="Signalements par catégorie sur 6 mois">
+            @for (b of bars(); track b.label) {
+              <li>
+                <span class="val">{{ b.total }}</span>
+                <span class="bar" [style.height.%]="b.pct" [style.background]="b.visual.color" aria-hidden="true"></span>
+                <span class="lbl">{{ b.label }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">Pas encore de signalement sur la période.</p>
+        }
+      </section>
+
+      <section class="pg-card" aria-labelledby="done">
+        <h2 class="pg-h2" id="done">Derniers dossiers résolus</h2>
+        @if (o.derniers_resolus.length) {
+          <ul class="done">
+            @for (r of o.derniers_resolus; track r.reference) {
+              <li>
+                <span class="done-title">{{ r.title }}</span>
+                <span class="pill-status st-resolu">Résolu</span>
+                @if (ago(r.resolved_at); as when) {
+                  <span class="muted small when">{{ when }}</span>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">Aucun dossier résolu pour le moment.</p>
+        }
+      </section>
+    </div>
+
+    <section class="pg-section contact pg-card" aria-labelledby="ct">
+      <div>
+        <h2 class="pg-h2" id="ct">Contact</h2>
+        <dl>
+          @if (o.contact.email) {
+            <div><dt>E-mail</dt><dd><a [href]="'mailto:' + o.contact.email">{{ o.contact.email }}</a></dd></div>
+          }
+          @if (o.contact.telephone) {
+            <div><dt>Téléphone</dt><dd><a [href]="'tel:' + o.contact.telephone.replace(' ', '')">{{ o.contact.telephone }}</a></dd></div>
+          }
+          @if (o.contact.horaires) {
+            <div><dt>Horaires</dt><dd>{{ o.contact.horaires }}</dd></div>
+          }
+        </dl>
+      </div>
+      <a class="pg-btn pg-btn--outline" routerLink="/">Voir la carte</a>
+    </section>
+
+    <p class="pg-note limits">
+      <strong>Périmètre et limites.</strong> {{ o.perimetre_et_limites }} Les indicateurs doivent être interprétés selon
+      la nature et la complexité des interventions : un lampadaire ne se compare pas à une réfection de chaussée.
+    </p>
+  }
+</main>
+
+<app-site-footer />

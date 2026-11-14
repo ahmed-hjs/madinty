@@ -1,0 +1,150 @@
+<app-site-header />
+
+<main class="pg-main wrap">
+  <a class="back" routerLink="/">← Retour à la carte</a>
+
+  @if (loading()) {
+    <p class="pg-state" role="status">Chargement…</p>
+  } @else if (error() === 'notfound') {
+    <div class="pg-state" role="alert">
+      <h1 class="pg-h2">Signalement introuvable</h1>
+      <p>Ce dossier n’existe pas ou n’est pas public.</p>
+      <a class="pg-btn pg-btn--primary" routerLink="/">Voir la carte</a>
+    </div>
+  } @else if (error() === 'network') {
+    <div class="pg-state" role="alert">
+      <p>Impossible de charger ce signalement pour le moment.</p>
+      <button type="button" class="pg-btn pg-btn--outline" (click)="load()">Réessayer</button>
+    </div>
+  } @else if (r(); as d) {
+    <header class="head">
+      <div class="ids">
+        <span class="ref">#{{ d.reference }}</span>
+        <span [class]="'pill-status st-' + statusId()">{{ statusLabel() }}</span>
+        @if (highPriority()) { <span class="pill prio">Priorité haute</span> }
+      </div>
+      <h1 class="pg-title">{{ d.title }}</h1>
+      <p class="sub">
+        @if (cat(); as c) {
+          <span class="dot" [style.background]="c.color"><app-icon [name]="c.icon" [size]="14" [stroke]="2.2" /></span>
+        }
+        {{ d.category_label }} · {{ d.organization_name }} · {{ ago(d.created_at) }}
+        @if (d.address) { · {{ d.address }} }
+      </p>
+    </header>
+
+    <div class="grid">
+      <div class="col">
+        <section class="pg-card block">
+          <h2 class="pg-h2">Description</h2>
+          <p class="desc">{{ d.description }}</p>
+          @if (photos().length) {
+            <div class="gallery">
+              @for (i of photos(); track i.id) {
+                <a [href]="src(i)" target="_blank" rel="noopener"><img [src]="src(i)" alt="Photo du signalement" loading="lazy" /></a>
+              }
+            </div>
+          }
+          <div class="support-row">
+            <app-support-button [reportId]="d.id" [count]="d.supports_count" [supported]="d.supported_by_me" [mine]="d.is_mine"
+              (changed)="onSupported($event)" />
+            <span class="hint">{{ d.supports_count }} {{ d.supports_count > 1 ? 'habitants soutiennent' : 'habitant soutient' }} ce dossier</span>
+          </div>
+        </section>
+
+        @if (d.status === 'Rejeté' && d.is_author) {
+          <section class="pg-card block warn">
+            <h2 class="pg-h2">Signalement rejeté</h2>
+            <p><strong>Motif :</strong> {{ d.rejection_reason }}</p>
+            @if (d.rejection_comment) { <p>{{ d.rejection_comment }}</p> }
+          </section>
+        }
+
+        @if (d.work_report || proofs().length) {
+          <section class="pg-card block">
+            <h2 class="pg-h2">Compte rendu de l’organisme</h2>
+            @if (d.work_report) { <p class="desc">{{ d.work_report }}</p> }
+            @if (proofs().length) {
+              <div class="gallery">
+                @for (i of proofs(); track i.id) {
+                  <figure>
+                    <a [href]="src(i)" target="_blank" rel="noopener"><img [src]="src(i)" [alt]="'Photo ' + (i.kind ?? '')" loading="lazy" /></a>
+                    @if (i.kind) { <figcaption>{{ i.kind }}</figcaption> }
+                  </figure>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        @if (canDecide()) {
+          <section class="pg-card block decide" id="verification" aria-labelledby="dec">
+            <h2 class="pg-h2" id="dec">Le problème est-il bien réglé ?</h2>
+            <p class="hint">⏱ {{ daysLeft() }} {{ daysLeft() > 1 ? 'jours restants' : 'jour restant' }} · sans réponse de votre part, la résolution sera confirmée automatiquement.</p>
+
+            @if (!contesting()) {
+              <div class="btns">
+                <button type="button" class="pg-btn ok" [disabled]="busy()" (click)="confirm()">✓ C’est réglé</button>
+                <button type="button" class="pg-btn no" [disabled]="busy()" (click)="contesting.set(true)">✕ Ce n’est pas réglé</button>
+              </div>
+            } @else {
+              <p class="hint">Une seule contestation est possible par résolution. L’organisme l’examine avant de rouvrir le dossier.</p>
+              <label for="msg" class="lbl">Que se passe-t-il ?</label>
+              <textarea id="msg" rows="4" maxlength="300" [value]="message()" (input)="message.set($any($event.target).value)"></textarea>
+              <p class="hint">{{ message().length }} / 300</p>
+              <div class="btns">
+                <label class="pg-btn pg-btn--outline file">
+                  <app-icon name="camera" [size]="16" /> {{ photo() ? photo()!.name : 'Ajouter une photo (facultatif)' }}
+                  <input #f type="file" accept="image/jpeg,image/png" hidden (change)="pickPhoto(f)" />
+                </label>
+              </div>
+              <div class="btns">
+                <button type="button" class="pg-btn pg-btn--outline" [disabled]="busy()" (click)="contesting.set(false)">Annuler</button>
+                <button type="button" class="pg-btn pg-btn--primary" [disabled]="busy()" (click)="sendContest()">
+                  {{ busy() ? 'Envoi…' : 'Envoyer ma contestation' }}
+                </button>
+              </div>
+            }
+            @if (actionError(); as e) { <p class="err" role="alert">{{ e }}</p> }
+          </section>
+        }
+
+        @if (d.contestation; as k) {
+          <section class="pg-card block">
+            <h2 class="pg-h2">Votre contestation</h2>
+            <p class="desc">« {{ k.message }} »</p>
+            <p class="hint">
+              @if (!k.decision) { En cours d’examen par l’organisme. }
+              @else if (k.decision === 'Acceptée') { Acceptée : le dossier est rouvert. }
+              @else { Rejetée @if (k.decision_reason) { · motif : {{ k.decision_reason }} } }
+            </p>
+          </section>
+        }
+      </div>
+
+      <aside class="col">
+        <section class="pg-card block">
+          <h2 class="pg-h2">Localisation</h2>
+          <div #mapEl class="map" role="img" [attr.aria-label]="'Position du signalement ' + d.reference"></div>
+        </section>
+
+        @if (d.history; as h) {
+          <section class="pg-card block">
+            <h2 class="pg-h2">Historique</h2>
+            <ol class="timeline">
+              @for (e of h; track $index; let last = $last) {
+                <li [class.last]="last">
+                  <strong>{{ e.new_status }}</strong>
+                  <span class="hint">{{ date(e.created_at) }} · {{ e.actor }}</span>
+                  @if (e.comment) { <span class="hint">{{ e.comment }}</span> }
+                </li>
+              }
+            </ol>
+          </section>
+        }
+      </aside>
+    </div>
+  }
+</main>
+
+<app-site-footer />

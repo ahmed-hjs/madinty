@@ -1,0 +1,73 @@
+<div class="icon-circle" aria-hidden="true">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </svg>
+</div>
+<h1 class="title title--center" id="am-title">Nouveau mot de passe</h1>
+
+@if (linkInvalid()) {
+  <p class="alert alert--error" role="alert">Ce lien est expiré ou a déjà été utilisé.</p>
+  <button type="button" class="btn btn--primary" (click)="modal.show('forgot')">Demander un nouveau lien</button>
+  <button type="button" class="link link--center" (click)="modal.show('login')">← Retour à la connexion</button>
+} @else {
+  @if (error()) {
+    <p class="alert alert--error" role="alert">{{ error() }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="field">
+      <app-password-field
+        inputId="reset-password"
+        label="Nouveau mot de passe"
+        autocomplete="new-password"
+        [control]="form.controls.password"
+        [invalid]="!!fieldError('password')"
+      />
+      <app-password-strength [value]="password()" />
+      @if (fieldError('password'); as err) {
+        <p class="field-error" id="reset-password-err">{{ err }}</p>
+      }
+
+      <ul class="criteria" aria-label="Critères du mot de passe">
+        <li [class.ok]="checks().length">
+          <span aria-hidden="true">{{ checks().length ? '✓' : '○' }}</span>
+          <span class="sr-only">{{ checks().length ? 'Respecté : ' : 'Non respecté : ' }}</span>
+          8 caractères minimum
+        </li>
+        <li [class.ok]="checks().upperDigit">
+          <span aria-hidden="true">{{ checks().upperDigit ? '✓' : '○' }}</span>
+          <span class="sr-only">{{ checks().upperDigit ? 'Respecté : ' : 'Non respecté : ' }}</span>
+          Une majuscule et un chiffre
+        </li>
+        <li [class.bad]="sameAsOld()">
+          <span aria-hidden="true">{{ sameAsOld() ? '✕' : '○' }}</span>
+          <span class="sr-only">{{ sameAsOld() ? 'Non respecté : ' : 'Vérifié à l’enregistrement : ' }}</span>
+          Différent de l’ancien
+        </li>
+      </ul>
+    </div>
+
+    <div class="field">
+      <app-password-field
+        inputId="reset-confirm"
+        label="Confirmer le mot de passe"
+        autocomplete="new-password"
+        [control]="form.controls.confirm"
+        [invalid]="!!fieldError('confirm')"
+      />
+      @if (fieldError('confirm'); as err) {
+        <p class="field-error" id="reset-confirm-err">{{ err }}</p>
+      }
+    </div>
+
+    <button class="btn btn--primary" type="submit" [disabled]="loading()">
+      {{ loading() ? 'Enregistrement…' : 'Enregistrer et me connecter' }}
+    </button>
+  </form>
+
+  <p class="foot">
+    Lien expiré ou déjà utilisé ?
+    <button type="button" class="link" (click)="modal.show('forgot')">Demander un nouveau lien</button>
+  </p>
+}

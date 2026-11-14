@@ -1,0 +1,96 @@
+<h1 class="title" id="am-title">Créer un compte citoyen</h1>
+<p class="subtitle">Un compte est nécessaire pour signaler un problème ou soutenir un signalement.</p>
+
+@if (error()) {
+  <p class="alert alert--error" role="alert">{{ error() }}</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="field">
+    <label class="label" for="reg-name">Nom complet</label>
+    <input
+      class="input"
+      id="reg-name"
+      type="text"
+      autocomplete="name"
+      formControlName="fullName"
+      [attr.aria-invalid]="fieldError('fullName') ? 'true' : null"
+      [attr.aria-describedby]="fieldError('fullName') ? 'reg-name-err' : null"
+    />
+    @if (fieldError('fullName'); as err) {
+      <p class="field-error" id="reg-name-err">{{ err }}</p>
+    }
+  </div>
+
+  <div class="field">
+    <label class="label" for="reg-email">E-mail</label>
+    <input
+      class="input"
+      id="reg-email"
+      type="email"
+      inputmode="email"
+      autocomplete="email"
+      formControlName="email"
+      [attr.aria-invalid]="fieldError('email') ? 'true' : null"
+      [attr.aria-describedby]="fieldError('email') ? 'reg-email-err' : null"
+    />
+    @if (fieldError('email'); as err) {
+      <p class="field-error" id="reg-email-err">{{ err }}</p>
+    }
+  </div>
+
+  <div class="field">
+    <app-password-field
+      inputId="reg-password"
+      label="Mot de passe"
+      autocomplete="new-password"
+      [control]="form.controls.password"
+      [invalid]="!!fieldError('password')"
+    />
+    <app-password-strength [value]="password()" />
+    @if (fieldError('password'); as err) {
+      <p class="field-error" id="reg-password-err">{{ err }}</p>
+    }
+  </div>
+
+  <div class="field">
+    <app-password-field
+      inputId="reg-confirm"
+      label="Confirmer le mot de passe"
+      autocomplete="new-password"
+      [control]="form.controls.confirm"
+      [invalid]="!!fieldError('confirm')"
+    />
+    @if (fieldError('confirm'); as err) {
+      <p class="field-error" id="reg-confirm-err">{{ err }}</p>
+    }
+  </div>
+
+  <div class="field">
+    <label class="check check--top">
+      <input
+        type="checkbox"
+        formControlName="consent"
+        [attr.aria-invalid]="fieldError('consent') ? 'true' : null"
+        [attr.aria-describedby]="fieldError('consent') ? 'reg-consent-err' : null"
+      />
+      <span>J’accepte la politique de confidentialité et la conservation limitée de mes données.</span>
+    </label>
+    @if (fieldError('consent'); as err) {
+      <p class="field-error" id="reg-consent-err">{{ err }}</p>
+    }
+  </div>
+
+  <button class="btn btn--primary" type="submit" [disabled]="loading()">
+    {{ loading() ? 'Création…' : 'Créer mon compte' }}
+  </button>
+</form>
+
+<p class="foot">
+  Déjà inscrit ?
+  <button type="button" class="link" (click)="modal.show('login')">Connexion</button>
+</p>
+
+<p class="note">
+  Les comptes organisme, équipe et administrateur sont créés par l’administrateur de la plateforme.
+</p>

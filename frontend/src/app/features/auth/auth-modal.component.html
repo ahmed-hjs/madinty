@@ -1,0 +1,38 @@
+@if (modal.isOpen()) {
+  <div class="auth-modal" (mousedown)="onBackdropMouseDown($event)">
+    <div #dialog class="am-card" role="dialog" aria-modal="true" aria-labelledby="am-title" tabindex="-1">
+      <button type="button" class="am-close" aria-label="Fermer" (click)="modal.close()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+
+      <div class="am-brand">
+        <svg width="22" height="28" viewBox="0 0 22 28" aria-hidden="true">
+          <path d="M11 0C4.9 0 0 4.8 0 10.8 0 18.7 11 28 11 28s11-9.3 11-17.2C22 4.8 17.1 0 11 0z" fill="#ea4335" />
+          <circle cx="11" cy="10.5" r="4" fill="#ffffff" />
+        </svg>
+        <span>MADINTY</span>
+      </div>
+
+      @if (modal.reason(); as reason) {
+        <p class="alert alert--info am-reason" role="status">{{ reason }}</p>
+      }
+
+      @switch (modal.view()) {
+        @case ('login') {
+          <app-login-view />
+        }
+        @case ('register') {
+          <app-register-view />
+        }
+        @case ('forgot') {
+          <app-forgot-view />
+        }
+        @case ('reset') {
+          <app-reset-view />
+        }
+      }
+    </div>
+  </div>
+}

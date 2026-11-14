@@ -1,0 +1,20 @@
+@mixin surface($strong: false) {
+  @if $strong {
+    background: var(--glass-bg-strong);
+  } @else {
+    background: var(--glass-bg);
+  }
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background: var(--card);
+  }
+}
+
+@mixin control {
+  background: var(--glass-control);
+  border: 0.5px solid var(--glass-border);
+}

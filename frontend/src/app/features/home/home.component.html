@@ -1,0 +1,223 @@
+<main class="home" aria-label="Accueil et carte publique">
+  <div #mapEl class="map" role="application" aria-label="Carte interactive des signalements"></div>
+
+  <header class="topbar card">
+    <a class="brand" routerLink="/" aria-label="MADINTY, accueil">
+      <svg width="22" height="28" viewBox="0 0 22 28" aria-hidden="true" focusable="false">
+        <path d="M11 1C5.5 1 1.5 5.2 1.5 10.4 1.5 17 11 27 11 27s9.5-10 9.5-16.6C20.5 5.2 16.5 1 11 1z" fill="#EA4335" />
+        <circle cx="11" cy="10.4" r="3.6" fill="#fff" />
+      </svg>
+      <span>MADINTY</span>
+    </a>
+
+    <nav class="nav" aria-label="Navigation principale">
+      <a routerLink="/" class="active" aria-current="page">Carte</a>
+      <a routerLink="/organismes">Organismes</a>
+      <a routerLink="/comment-ca-marche">Comment ça marche</a>
+      <a routerLink="/contact">Contact</a>
+    </nav>
+
+    <div class="actions">
+      <button type="button" class="lang" aria-label="Langue : français">
+        FR <app-icon name="chevron" [size]="12" [stroke]="2.2" />
+      </button>
+      @if (auth.user(); as user) {
+        <div class="profile-wrap">
+          <button
+            type="button"
+            class="avatar"
+            aria-haspopup="menu"
+            [attr.aria-expanded]="profileOpen()"
+            [attr.aria-label]="'Profil de ' + user.fullName"
+            (click)="toggleProfile($event)"
+          >
+            {{ initials(user.fullName) }}
+          </button>
+          @if (profileOpen()) {
+            <div class="profile-menu card" role="menu" (click)="$event.stopPropagation()">
+              <div class="profile-id">
+                <strong>{{ user.fullName }}</strong>
+                <span>{{ user.email }}</span>
+              </div>
+              @if (auth.user()?.role === 'citizen') {
+                <a role="menuitem" class="menu-link" routerLink="/citoyen/mes-signalements">Mes signalements</a>
+              }
+              <button type="button" role="menuitem" class="logout" (click)="logout()">Se déconnecter</button>
+            </div>
+          }
+        </div>
+      } @else {
+        <button type="button" class="btn btn-outline" (click)="openAuth('login')">Connexion</button>
+        <button type="button" class="btn btn-primary" (click)="openAuth('register')">S’inscrire</button>
+      }
+    </div>
+  </header>
+
+  <section class="hero card" aria-labelledby="hero-title">
+    <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Ville pilote · en direct</p>
+
+    <h1 id="hero-title">
+      Signalez.<br />Suivez.<br />
+      <span class="accent">Améliorez<br />votre ville.</span>
+    </h1>
+
+    <p class="lead">
+      Chaque problème urbain devient un dossier suivi, de la déclaration jusqu’à la vérification de sa résolution.
+    </p>
+
+    <label class="search">
+      <app-icon name="search" [size]="18" />
+      <input
+        type="search"
+        name="q"
+        placeholder="Adresse ou quartier…"
+        autocomplete="off"
+        aria-label="Rechercher une adresse ou un quartier"
+        [value]="query()"
+        (input)="onSearch($any($event.target).value)"
+        (keydown.enter)="focusFirstResult()"
+      />
+    </label>
+
+    <button type="button" class="btn btn-cta" (click)="report()">
+      <app-icon name="plus" [size]="18" [stroke]="2.2" />
+      Signaler un problème
+    </button>
+
+    <div class="stats" role="group" aria-label="Chiffres publics agrégés">
+      <div class="stat">
+        <strong>{{ formatNumber(stats().total) }}</strong>
+        <span>Signalements</span>
+      </div>
+      <div class="stat stat-green">
+        <strong>{{ stats().resolvedPct }} %</strong>
+        <span>Résolus</span>
+      </div>
+      <div class="stat stat-blue">
+        <strong>{{ stats().avgDays }} j</strong>
+        <span>Délai moyen</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="filters" role="toolbar" aria-label="Filtres de la carte">
+    <div class="filters-row">
+      @for (key of menuKeys; track key) {
+        <div class="menu-wrap">
+          <button
+            type="button"
+            class="pill"
+            [class.active]="filters()[key] !== 'all'"
+            aria-haspopup="listbox"
+            [attr.aria-expanded]="openMenu() === key"
+            (click)="toggleMenu(key, $event)"
+          >
+            {{ pillLabel(key) }}
+            <app-icon name="chevron" [size]="12" [stroke]="2.2" />
+          </button>
+
+          @if (openMenu() === key) {
+            <ul class="menu card" role="listbox" [attr.aria-label]="menus[key].label" (click)="$event.stopPropagation()">
+              @for (o of menus[key].options; track o.value) {
+                <li role="presentation">
+                  <button
+                    type="button"
+                    role="option"
+                    [attr.aria-selected]="filters()[key] === o.value"
+                    [class.selected]="filters()[key] === o.value"
+                    (click)="setFilter(key, o.value)"
+                  >
+                    {{ o.label }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      @if (hasActiveFilters()) {
+        <button type="button" class="reset" (click)="resetFilters()">Réinitialiser</button>
+      }
+    </div>
+
+    <button
+      type="button"
+      class="pill heat"
+      role="switch"
+      [attr.aria-checked]="heatmap()"
+      [class.on]="heatmap()"
+      (click)="toggleHeatmap()"
+    >
+      <span class="switch" aria-hidden="true"><span class="knob"></span></span>
+      Heatmap
+    </button>
+  </div>
+
+  @if (supportError(); as msg) {
+    <p class="toast card" role="alert">{{ msg }}</p>
+  }
+
+  <aside class="latest card" aria-labelledby="latest-title">
+    <h2 id="latest-title">Derniers signalements</h2>
+    <p class="updated">Mis à jour {{ updatedLabel() }}</p>
+
+    @if (loading()) {
+      <p class="empty">Chargement…</p>
+    } @else if (loadError()) {
+      <div class="empty">
+        <p>Impossible de charger les signalements.</p>
+        <button type="button" class="reset" (click)="retry()">Réessayer</button>
+      </div>
+    } @else if (latest().length === 0) {
+      <div class="empty">
+        <p>Aucun signalement ne correspond à ces filtres.</p>
+        <button type="button" class="reset" (click)="resetFilters()">Réinitialiser</button>
+      </div>
+    } @else {
+      <ul class="list">
+        @for (r of latest(); track r.id) {
+          <li>
+            <button type="button" class="item" [class.selected]="r.id === selectedId()" (click)="selectFromList(r)">
+              <span class="disc" [style.background]="category(r).color">
+                <app-icon [name]="category(r).icon" [size]="16" [stroke]="2.2" />
+              </span>
+              <span class="item-body">
+                <span class="item-title">{{ r.title }}</span>
+                <span class="item-meta">{{ r.address }} · {{ ago(r) }}</span>
+                <span [class]="'pill-status st-' + r.status">{{ statusLabel(r) }}</span>
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </aside>
+
+  <div class="bottom">
+    <p class="demo-note card">Données fictives de démonstration</p>
+
+    <div class="legend card" aria-label="Légende de la carte">
+      <div class="legend-row">
+        <strong>Catégorie</strong>
+        @for (c of categories; track c.id) {
+          <span class="lg">
+            <i class="lg-disc" [style.background]="c.color"><app-icon [name]="c.icon" [size]="10" [stroke]="2.6" /></i>
+            {{ c.label }}
+          </span>
+        }
+      </div>
+      <div class="legend-row">
+        <strong>Statut</strong>
+        @for (s of statuses; track s.id) {
+          <span class="lg"><i class="lg-dot" [style.background]="statusColor[s.id]"></i>{{ s.label }}</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="zoom card" role="group" aria-label="Zoom de la carte">
+    <button type="button" aria-label="Zoom avant" (click)="zoomIn()"><app-icon name="plus" [size]="20" /></button>
+    <button type="button" aria-label="Zoom arrière" (click)="zoomOut()"><app-icon name="minus" [size]="20" /></button>
+  </div>
+</main>

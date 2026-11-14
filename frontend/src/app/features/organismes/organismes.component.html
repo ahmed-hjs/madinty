@@ -1,0 +1,63 @@
+<app-site-header />
+
+<main class="pg-main" aria-labelledby="orgs-title">
+  <p class="pg-eyebrow">Organismes partenaires · territoire pilote</p>
+  <h1 class="pg-title" id="orgs-title">Qui traite <span class="accent">vos signalements&nbsp;?</span></h1>
+  <p class="pg-lead">
+    Chaque catégorie de problème est rattachée à l’organisme responsable du service concerné. Découvrez leurs domaines
+    d’intervention et leurs statistiques publiques, agrégées et sans donnée personnelle.
+  </p>
+
+  @if (loading()) {
+    <p class="pg-state" role="status">Chargement des organismes…</p>
+  } @else if (failed()) {
+    <div class="pg-state" role="alert">
+      <p>Impossible de charger les organismes pour le moment.</p>
+      <button type="button" class="pg-btn pg-btn--outline" (click)="load()">Réessayer</button>
+    </div>
+  } @else if (orgs().length === 0) {
+    <p class="pg-state">Aucun organisme partenaire n’est encore référencé.</p>
+  } @else {
+    <ul class="grid" aria-label="Organismes partenaires">
+      @for (o of orgs(); track o.id) {
+        <li>
+          <a class="org pg-card" [routerLink]="['/organismes', o.slug]">
+            <div class="org-head">
+              <span class="pg-org-avatar" aria-hidden="true">{{ initials(o.name) }}</span>
+              <div>
+                <h2>{{ o.name }}</h2>
+                <p class="org-type">{{ o.type }}</p>
+              </div>
+            </div>
+
+            <p class="org-desc">{{ o.description }}</p>
+
+            <ul class="chips" aria-label="Domaines d’intervention">
+              @for (d of o.domaines; track d) {
+                <li class="pg-chip">
+                  <span class="dot" [style.background]="visual(d).color">
+                    @if (visual(d).icon; as icon) {
+                      <app-icon [name]="icon" [size]="14" [stroke]="2.2" />
+                    } @else {
+                      {{ d.charAt(0) }}
+                    }
+                  </span>
+                  {{ d }}
+                </li>
+              }
+            </ul>
+
+            <span class="more">Voir la page de l’organisme →</span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+
+  <p class="pg-note limits">
+    MADINTY ne garantit pas qu’un organisme traite un signalement : la prise en charge dépend du partenariat, des
+    compétences et des moyens disponibles.
+  </p>
+</main>
+
+<app-site-footer />

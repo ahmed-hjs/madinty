@@ -1,0 +1,153 @@
+:host {
+  display: block;
+}
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+
+  .num {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, var(--blue) 0%, var(--blue-2) 100%);
+    color: #fff;
+    font-weight: 800;
+  }
+
+  .who {
+    margin: 0 0 2px;
+    color: var(--green-text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  p:last-child {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+}
+
+.life {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--tint-blue-bg);
+    color: var(--link);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .arrow {
+    color: var(--muted);
+  }
+}
+
+.roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+
+  li {
+    border-top: 4px solid transparent;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+}
+
+.faq {
+  display: grid;
+  gap: 12px;
+
+  details {
+    padding: 16px 20px;
+  }
+
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+}
+
+.end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  .pg-h2 {
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+  }
+}

@@ -1,0 +1,62 @@
+:host { display: block; }
+.wrap { max-width: 860px; }
+.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin: 22px 0 16px;
+  overflow-x: auto;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 0.5px solid var(--glass-border);
+    background: var(--glass-control);
+    color: var(--text);
+    font: 600 14px/1 var(--font);
+    white-space: nowrap;
+    cursor: pointer;
+
+    &.on { background: var(--tint-blue-bg); color: var(--link); border-color: var(--blue); }
+    &:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  }
+
+  .badge { padding: 2px 8px; border-radius: 999px; background: var(--st-recu-bg); color: var(--st-recu-fg); font-size: 12px; }
+}
+
+.list { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; list-style: none; }
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+
+  .main { display: flex; flex-direction: column; gap: 4px; min-width: 0; color: var(--text); text-decoration: none; strong { font-size: 16px; } &:hover strong { text-decoration: underline; } }
+  .meta { color: var(--muted); font-size: 13px; }
+  .side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex: none; }
+
+  .ok {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: #34a853;
+    color: #fff;
+    font: 600 13px/1 var(--font);
+    cursor: pointer;
+    &[disabled] { opacity: 0.6; cursor: default; }
+  }
+  .no { color: var(--link); font-size: 13px; font-weight: 600; }
+
+  @media (max-width: 560px) { flex-direction: column; align-items: stretch; .side { align-items: flex-start; } }
+}
+
+.pg-state { padding: 32px 0; color: var(--muted); display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.err { color: var(--st-urgent-fg); font-weight: 600; }

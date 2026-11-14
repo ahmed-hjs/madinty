@@ -1,0 +1,205 @@
+@use '../styles/glass' as g;
+
+:host {
+  display: block;
+  position: sticky;
+  top: 16px;
+  z-index: 1000;
+  margin: 16px 16px 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  height: 60px;
+  padding: 0 14px 0 20px;
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  @include g.surface;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  height: 100%;
+
+  a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--text);
+    }
+
+    &.active {
+      color: var(--link);
+      font-weight: 600;
+
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 10px;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--link);
+      }
+    }
+  }
+}
+
+.actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font: 600 15px/1 var(--font);
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+
+.btn-outline {
+  @include g.control;
+  color: var(--link);
+
+  &:hover {
+    background: var(--glass-hover);
+  }
+}
+
+.btn-primary {
+  border: 0;
+  color: #fff;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--blue-2) 100%);
+
+  &:hover {
+    filter: brightness(1.06);
+  }
+}
+
+.profile-wrap {
+  position: relative;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--blue-2) 100%);
+  color: #fff;
+  font: 700 14px/1 var(--font);
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(1.06);
+  }
+}
+
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 230px;
+  padding: 8px;
+  border-radius: var(--radius-lg);
+  @include g.surface(true);
+}
+
+.profile-id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 12px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+
+  strong {
+    font-size: 14px;
+  }
+
+  span {
+    font-size: 12px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+}
+
+.logout {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: 600 14px/1 var(--font);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-hover);
+  }
+}
+
+@media (max-width: 860px) {
+  :host {
+    margin: 10px 10px 0;
+    top: 10px;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+    gap: 6px 16px;
+    padding: 10px 14px;
+  }
+
+  .actions {
+    order: 2;
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    height: 40px;
+    gap: 20px;
+    overflow-x: auto;
+
+    a.active::after {
+      bottom: 4px;
+    }
+  }
+}

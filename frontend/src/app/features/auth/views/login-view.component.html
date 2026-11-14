@@ -1,0 +1,59 @@
+<h1 class="title" id="am-title">Bon retour parmi nous</h1>
+<p class="subtitle">Connectez-vous pour suivre vos signalements.</p>
+
+@if (error()) {
+  <p class="alert alert--error" role="alert">{{ error() }}</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="field">
+    <label class="label" for="login-email">E-mail</label>
+    <input
+      class="input"
+      id="login-email"
+      type="email"
+      inputmode="email"
+      autocomplete="email"
+      formControlName="email"
+      [attr.aria-invalid]="showError('email') ? 'true' : null"
+      [attr.aria-describedby]="showError('email') ? 'login-email-err' : null"
+    />
+    @if (showError('email')) {
+      <p class="field-error" id="login-email-err">{{ emailMessage() }}</p>
+    }
+  </div>
+
+  <div class="field">
+    <app-password-field
+      inputId="login-password"
+      label="Mot de passe"
+      autocomplete="current-password"
+      [control]="form.controls.password"
+      [invalid]="showError('password')"
+    />
+    @if (showError('password')) {
+      <p class="field-error" id="login-password-err">Saisissez votre mot de passe.</p>
+    }
+  </div>
+
+  <div class="row">
+    <label class="check">
+      <input type="checkbox" formControlName="remember" />
+      <span>Rester connecté</span>
+    </label>
+    <button type="button" class="link" (click)="modal.show('forgot')">Mot de passe oublié ?</button>
+  </div>
+
+  <button class="btn btn--primary" type="submit" [disabled]="loading()">
+    {{ loading() ? 'Connexion…' : 'Se connecter' }}
+  </button>
+</form>
+
+<div class="divider"><span>ou</span></div>
+
+<button type="button" class="btn btn--outline" (click)="modal.close()">Continuer en visiteur →</button>
+
+<p class="foot">
+  Pas encore de compte ?
+  <button type="button" class="link" (click)="modal.show('register')">S’inscrire</button>
+</p>

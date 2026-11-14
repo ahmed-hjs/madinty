@@ -1,0 +1,82 @@
+<app-site-header />
+
+<main class="pg-main" aria-labelledby="hiw-title">
+  <p class="pg-eyebrow">Comment ça marche</p>
+  <h1 class="pg-title" id="hiw-title">Du signalement à la <span class="accent">résolution vérifiée.</span></h1>
+  <p class="pg-lead">
+    MADINTY n’est pas un simple réseau de réclamations : c’est un outil qui suit chaque problème urbain de bout en
+    bout, de la déclaration jusqu’à la confirmation par le citoyen.
+  </p>
+  <div class="cta">
+    <button type="button" class="pg-btn pg-btn--primary" (click)="report()">Signaler un problème</button>
+    <a class="pg-btn pg-btn--outline" routerLink="/">Explorer la carte</a>
+  </div>
+
+  <section class="pg-section" aria-labelledby="steps">
+    <h2 class="pg-h2" id="steps">Neuf étapes, un dossier suivi</h2>
+    <ol class="steps">
+      @for (s of steps; track s.title; let i = $index) {
+        <li class="step pg-card">
+          <span class="num" aria-hidden="true">{{ i + 1 }}</span>
+          <div>
+            <p class="who">{{ s.who }}</p>
+            <h3>{{ s.title }}</h3>
+            <p>{{ s.text }}</p>
+          </div>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <section class="pg-section" aria-labelledby="life">
+    <h2 class="pg-h2" id="life">Le cycle de vie d’un signalement</h2>
+    <ol class="life" aria-label="Statuts successifs">
+      @for (s of statuses; track s; let last = $last) {
+        <li><span class="chip">{{ s }}</span>@if (!last) {<span class="arrow" aria-hidden="true">→</span>}</li>
+      }
+    </ol>
+    <p class="pg-note">
+      Un signalement rejeté passe à « Rejeté » avec un motif visible par son auteur. Si une contestation est acceptée,
+      le dossier repasse à « En cours » avec un commentaire officiel. Une seule contestation est possible par
+      résolution.
+    </p>
+  </section>
+
+  <section class="pg-section" aria-labelledby="roles">
+    <h2 class="pg-h2" id="roles">Qui fait quoi&nbsp;?</h2>
+    <ul class="roles">
+      @for (r of roles; track r.name) {
+        <li class="pg-card" [style.border-top-color]="r.color">
+          <h3 [style.color]="r.color">{{ r.name }}</h3>
+          <p>{{ r.text }}</p>
+        </li>
+      }
+    </ul>
+    <p class="muted">
+      Chaque utilisateur ne voit que l’espace de son rôle. Un organisme ne reçoit que les signalements des catégories
+      dont il a la charge.
+    </p>
+  </section>
+
+  <section class="pg-section" aria-labelledby="faq">
+    <h2 class="pg-h2" id="faq">Questions fréquentes</h2>
+    <div class="faq">
+      @for (f of faq; track f.q) {
+        <details class="pg-card">
+          <summary>{{ f.q }}</summary>
+          <p>{{ f.a }}</p>
+        </details>
+      }
+    </div>
+  </section>
+
+  <section class="pg-section end pg-card">
+    <div>
+      <h2 class="pg-h2">Une question&nbsp;? Un partenariat&nbsp;?</h2>
+      <p class="muted">Écrivez-nous, nous répondons dès que possible.</p>
+    </div>
+    <a class="pg-btn pg-btn--outline" routerLink="/contact">Nous contacter</a>
+  </section>
+</main>
+
+<app-site-footer />

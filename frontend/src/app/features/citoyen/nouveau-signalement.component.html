@@ -1,0 +1,208 @@
+<app-site-header />
+
+<main class="pg-main wrap">
+  <p class="pg-eyebrow">Espace citoyen</p>
+  <h1 class="pg-title">Signaler un <span class="accent">problème</span></h1>
+
+  <ol class="steps" aria-label="Progression">
+    @for (label of steps; track label; let i = $index) {
+      <li [class.current]="step() === i + 1" [class.done]="step() > i + 1" [attr.aria-current]="step() === i + 1 ? 'step' : null">
+        <span class="num">
+          @if (step() > i + 1) {
+            <app-icon name="check" [size]="14" [stroke]="2.6" />
+          } @else {
+            {{ i + 1 }}
+          }
+        </span>
+        <span class="lbl">{{ label }}</span>
+      </li>
+    }
+  </ol>
+
+  @switch (step()) {
+    @case (1) {
+      <section class="pg-card panel" aria-labelledby="s1">
+        <h2 class="pg-h2" id="s1">Décrivez le problème</h2>
+
+        <fieldset class="field">
+          <legend>Catégorie</legend>
+          @if (catState() === 'loading') {
+            <p class="hint">Chargement des catégories…</p>
+          } @else if (catState() === 'error') {
+            <p class="err" role="alert">Impossible de charger les catégories. Rechargez la page.</p>
+          } @else {
+            <div class="chips">
+              @for (c of categories(); track c.id) {
+                <button
+                  type="button"
+                  class="chip"
+                  [class.on]="categoryId() === c.id"
+                  [attr.aria-pressed]="categoryId() === c.id"
+                  (click)="categoryId.set(c.id)"
+                >
+                  <span class="dot" [style.background]="catMeta(c).color"><app-icon [name]="catMeta(c).icon" [size]="14" [stroke]="2.2" /></span>
+                  {{ c.label }}
+                </button>
+              }
+            </div>
+            @if (category(); as c) {
+              <p class="org">Envoyé à · <strong>{{ c.organization_name }}</strong></p>
+            } @else if (showErrors()) {
+              <p class="err" role="alert">Choisissez une catégorie.</p>
+            }
+          }
+        </fieldset>
+
+        <div class="field">
+          <label for="t">Titre</label>
+          <input id="t" type="text" maxlength="255" autocomplete="off" placeholder="Ex. Lampadaire éteint devant l’école"
+            [value]="title()" (input)="title.set($any($event.target).value)" />
+          @if (showErrors() && titleError(); as e) { <p class="err" role="alert">{{ e }}</p> }
+        </div>
+
+        <div class="field">
+          <label for="d">Description</label>
+          <textarea id="d" rows="5" maxlength="5000" placeholder="Depuis quand ? En quoi est-ce gênant ou dangereux ?"
+            [value]="description()" (input)="description.set($any($event.target).value)"></textarea>
+          @if (showErrors() && descError(); as e) { <p class="err" role="alert">{{ e }}</p> }
+        </div>
+
+        <div class="field">
+          <label>Photos <span class="opt">(facultatif · {{ photos().length }}/5)</span></label>
+          <div class="photos">
+            @for (p of photos(); track p.url) {
+              <div class="thumb">
+                <img [src]="p.url" alt="Photo jointe" />
+                <button type="button" class="rm" aria-label="Retirer la photo" (click)="removePhoto(p)"><app-icon name="close" [size]="12" [stroke]="2.6" /></button>
+              </div>
+            }
+            @if (photos().length < 5) {
+              <label class="add" tabindex="0" (keydown.enter)="f.click()" (keydown.space)="f.click(); $event.preventDefault()">
+                <app-icon name="camera" [size]="22" />
+                <span>Ajouter</span>
+                <input #f type="file" accept="image/jpeg,image/png" multiple hidden (change)="addPhotos(f)" />
+              </label>
+            }
+          </div>
+          <p class="hint">JPG ou PNG · 5 Mo max · évitez les visages et plaques d’immatriculation.</p>
+          @if (photoError(); as e) { <p class="err" role="alert">{{ e }}</p> }
+        </div>
+
+        <div class="actions">
+          <a class="pg-btn pg-btn--outline" routerLink="/">Annuler</a>
+          <button type="button" class="pg-btn pg-btn--primary" (click)="next()">Continuer</button>
+        </div>
+      </section>
+    }
+
+    @case (2) {
+      <section class="pg-card panel" aria-labelledby="s2">
+        <h2 class="pg-h2" id="s2">Où se situe le problème ?</h2>
+        <p class="hint">Touchez la carte ou utilisez votre position, puis glissez le repère pour ajuster.</p>
+
+        <div class="map-wrap">
+          <div #mapEl class="map" role="application" aria-label="Carte pour placer le repère"></div>
+          <button type="button" class="locate" (click)="locate()" [disabled]="locating()">
+            <app-icon name="locate" [size]="16" /> {{ locating() ? 'Recherche…' : 'Utiliser ma position' }}
+          </button>
+        </div>
+        @if (locateError(); as e) { <p class="err" role="alert">{{ e }}</p> }
+
+        <p class="coords">
+          @if (positionSet()) { Position : <strong>{{ coords() }}</strong> } @else { Aucune position choisie pour l’instant. }
+        </p>
+
+        <div class="field">
+          <label for="a">Adresse ou repère <span class="opt">(facultatif)</span></label>
+          <input id="a" type="text" maxlength="500" autocomplete="street-address" placeholder="Ex. Av. de la Liberté, devant l’école"
+            [value]="address()" (input)="address.set($any($event.target).value)" />
+        </div>
+
+        <div class="actions">
+          <button type="button" class="pg-btn pg-btn--outline" (click)="back()">Retour</button>
+          <button type="button" class="pg-btn pg-btn--primary" [disabled]="!positionSet()" (click)="next()">Continuer</button>
+        </div>
+      </section>
+    }
+
+    @case (3) {
+      <section class="pg-card panel" aria-labelledby="s3">
+        <h2 class="pg-h2" id="s3">Vérifiez avant d’envoyer</h2>
+
+        <div class="recap">
+          @if (category(); as c) {
+            <span class="dot big" [style.background]="catMeta(c).color"><app-icon [name]="catMeta(c).icon" [size]="20" [stroke]="2.2" /></span>
+          }
+          <div>
+            <strong>{{ title() }}</strong>
+            <p class="hint">{{ category()?.label }} · envoyé à {{ category()?.organization_name }}</p>
+            <p class="hint">{{ address() || coords() }} · {{ photos().length }} photo(s)</p>
+          </div>
+        </div>
+
+        <h3 class="sub">
+          @if (nearbyState() === 'loading') { Recherche de signalements similaires… }
+          @else if (nearby().length) { {{ nearby().length }} signalement(s) similaire(s) à proximité }
+          @else { Aucun signalement similaire à proximité }
+        </h3>
+        <p class="hint">Même catégorie, proximité, dossiers récents. Les dossiers clos sont ignorés.</p>
+
+        @if (nearbyState() === 'error') {
+          <p class="err" role="status">La recherche de doublons est indisponible : vous pouvez tout de même envoyer.</p>
+        }
+
+        <ul class="dups">
+          @for (n of nearby(); track n.id) {
+            <li>
+              <div class="dup-main">
+                <strong>{{ n.title }}</strong>
+                <span class="hint">à {{ distance(n.distance_m) }} · {{ ago(n.created_at) }} · {{ n.reference }}</span>
+                <span [class]="'pill-status st-' + statusId(n)">{{ statusLabel(n) }}</span>
+              </div>
+              <app-support-button [reportId]="n.id" [count]="n.supports_count" [supported]="n.supported_by_me" [mine]="n.is_mine"
+                (changed)="onSupported(n.id, $event)" />
+            </li>
+          }
+        </ul>
+        @if (nearby().length) {
+          <p class="hint">C’est vous qui décidez : soutenez un dossier existant, ou envoyez le vôtre s’il s’agit d’un nouveau problème.</p>
+        }
+
+        @if (sendError(); as e) { <p class="err" role="alert">{{ e }}</p> }
+
+        <div class="actions">
+          <button type="button" class="pg-btn pg-btn--outline" [disabled]="sending()" (click)="back()">Retour</button>
+          <button type="button" class="pg-btn pg-btn--primary" [disabled]="sending() || nearbyState() === 'loading'" (click)="submit()">
+            {{ sending() ? 'Envoi…' : nearby().length ? 'Ce n’est pas un doublon · Envoyer' : 'Envoyer le signalement' }}
+          </button>
+        </div>
+      </section>
+    }
+
+    @case (4) {
+      @if (created(); as c) {
+        <section class="pg-card panel done-panel" aria-labelledby="s4">
+          <span class="ok" aria-hidden="true"><app-icon name="check" [size]="34" [stroke]="2.6" /></span>
+          <h2 class="pg-h2" id="s4">Signalement envoyé</h2>
+          <p class="hint">Merci. Votre signalement a été transmis à <strong>{{ c.organization_name }}</strong>.</p>
+          <p class="ref"><span class="pill-status st-recu">Reçu</span> <strong>#{{ c.reference }}</strong></p>
+          <p><strong>{{ c.title }}</strong></p>
+          @if (photoWarning(); as w) { <p class="err" role="status">{{ w }} Vous pourrez les rajouter depuis la fiche du dossier.</p> }
+
+          <ul class="next">
+            <li class="on">Soumis · à l’instant</li>
+            <li>Vérification par l’organisme</li>
+            <li>Intervention et résolution</li>
+          </ul>
+
+          <div class="actions center">
+            <a class="pg-btn pg-btn--primary" [routerLink]="['/signalements', c.reference]">Suivre mon signalement</a>
+            <a class="pg-btn pg-btn--outline" routerLink="/">Retour à la carte</a>
+          </div>
+        </section>
+      }
+    }
+  }
+</main>
+
+<app-site-footer />
