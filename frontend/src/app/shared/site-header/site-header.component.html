@@ -15,6 +15,9 @@
     @if (auth.user()?.role === 'organization') {
       <a routerLink="/organisme" routerLinkActive="active">Mon organisme</a>
     }
+    @if (auth.user()?.role === 'team_lead') {
+      <a routerLink="/terrain" routerLinkActive="active">Mes missions</a>
+    }
   </nav>
 
   <div class="actions">

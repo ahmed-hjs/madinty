@@ -42,6 +42,12 @@
               @if (auth.user()?.role === 'citizen') {
                 <a role="menuitem" class="menu-link" routerLink="/citoyen/mes-signalements">Mes signalements</a>
               }
+              @if (auth.user()?.role === 'team_lead') {
+                <a role="menuitem" class="menu-link" routerLink="/terrain">Mes missions terrain</a>
+              }
+              @if (auth.user()?.role === 'organization') {
+                <a role="menuitem" class="menu-link" routerLink="/organisme">Mon organisme</a>
+              }
               <button type="button" role="menuitem" class="logout" (click)="logout()">Se déconnecter</button>
             </div>
           }

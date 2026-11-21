@@ -53,5 +53,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/organisme/organisme.component').then((m) => m.OrganismeComponent),
   },
+  {
+    path: 'terrain',
+    title: 'Espace terrain — MADINTY',
+    canActivate: [roleGuard('team_lead')],
+    loadComponent: () =>
+      import('./features/terrain/terrain.component').then((m) => m.TerrainComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

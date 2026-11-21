@@ -1,0 +1,143 @@
+<app-site-header />
+
+<main class="pg-main terrain">
+  <div class="top">
+    <div>
+      <p class="pg-eyebrow">Espace terrain</p>
+      <h1 class="pg-title">Mes missions</h1>
+      <p class="pg-lead">Consultez vos interventions, documentez le travail et transmettez vos comptes rendus.</p>
+    </div>
+    <button type="button" class="pg-btn pg-btn--outline refresh" [disabled]="loading()" (click)="load()">Actualiser</button>
+  </div>
+
+  <section class="summary" aria-label="Résumé des missions">
+    <article class="pg-card summary-card"><strong>{{ stateCounts().a_faire }}</strong><span>À faire</span></article>
+    <article class="pg-card summary-card"><strong>{{ stateCounts().en_cours }}</strong><span>En cours / à valider</span></article>
+    <article class="pg-card summary-card"><strong>{{ stateCounts().terminees }}</strong><span>Terminées</span></article>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="Filtrer les missions">
+    <button type="button" role="tab" [class.on]="tab() === 'a_faire'" [attr.aria-selected]="tab() === 'a_faire'" (click)="selectTab('a_faire')">
+      À faire <span>{{ stateCounts().a_faire }}</span>
+    </button>
+    <button type="button" role="tab" [class.on]="tab() === 'en_cours'" [attr.aria-selected]="tab() === 'en_cours'" (click)="selectTab('en_cours')">
+      En cours / à valider <span>{{ stateCounts().en_cours }}</span>
+    </button>
+    <button type="button" role="tab" [class.on]="tab() === 'terminees'" [attr.aria-selected]="tab() === 'terminees'" (click)="selectTab('terminees')">
+      Terminées <span>{{ stateCounts().terminees }}</span>
+    </button>
+  </div>
+
+  @if (actionError(); as message) { <p class="error" role="alert">{{ message }}</p> }
+  @if (notice(); as message) { <p class="notice" role="status">{{ message }}</p> }
+
+  @if (loading()) {
+    <p class="pg-state" role="status">Chargement des missions…</p>
+  } @else if (error(); as message) {
+    <div class="pg-state" role="alert">
+      <p>{{ message }}</p>
+      <button type="button" class="pg-btn pg-btn--outline" (click)="load()">Réessayer</button>
+    </div>
+  } @else if (interventions().length === 0) {
+    <div class="empty pg-card">
+      <span class="empty-icon" aria-hidden="true">✓</span>
+      <h2>{{ tab() === 'terminees' ? 'Aucune mission terminée' : 'Aucune mission dans cette liste' }}</h2>
+      <p>Les missions qui vous sont affectées apparaîtront ici.</p>
+    </div>
+  } @else {
+    <ul class="mission-list">
+      @for (mission of interventions(); track mission.id) {
+        <li class="pg-card mission">
+          <button type="button" class="mission-main" (click)="open(mission)">
+            <span class="mission-heading">
+              <span class="ref">{{ mission.reference }}</span>
+              <span [class]="'pill-status st-' + (mission.status === 'Terminée' ? 'resolu' : mission.status === 'À valider' ? 'urgent' : 'en_cours')">{{ mission.status }}</span>
+            </span>
+            <strong>{{ mission.title }}</strong>
+            <span class="meta">Signalement {{ mission.report_reference }} · {{ mission.category_label }}</span>
+            <span class="meta">{{ mission.address || 'Adresse non renseignée' }}</span>
+          </button>
+          <div class="mission-side">
+            @if (mission.priority) { <span class="priority">{{ mission.priority }}</span> }
+            @if (mission.planned_date) { <span class="meta">Prévue le {{ mission.planned_date | date:'dd/MM/yyyy' }}</span> }
+            <button type="button" class="pg-btn pg-btn--outline" (click)="open(mission)">Ouvrir la mission</button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</main>
+
+@if (selected(); as mission) {
+  <div class="backdrop" (click)="close()">
+    <section class="drawer" role="dialog" aria-modal="true" aria-label="Détail de la mission" (click)="$event.stopPropagation()">
+      <button type="button" class="close" (click)="close()" aria-label="Fermer">×</button>
+      <p class="pg-eyebrow">{{ mission.reference }} · Signalement {{ mission.report.reference }}</p>
+      <h2>{{ mission.report.title }}</h2>
+      <p class="meta">{{ mission.report.category_label }} · {{ mission.report.address || 'Adresse non renseignée' }}</p>
+      <p class="description">{{ mission.report.description }}</p>
+      <span [class]="'pill-status st-' + (mission.status === 'Terminée' ? 'resolu' : mission.status === 'À valider' ? 'urgent' : 'en_cours')">{{ mission.status }}</span>
+      @if (mission.planned_date) { <p class="info"><b>Date prévue :</b> {{ mission.planned_date | date:'longDate' }}</p> }
+      @if (mission.instructions) { <p class="info"><b>Consignes :</b> {{ mission.instructions }}</p> }
+      <a class="map-link" [href]="'https://www.openstreetmap.org/?mlat=' + mission.report.latitude + '&mlon=' + mission.report.longitude + '#map=18/' + mission.report.latitude + '/' + mission.report.longitude" target="_blank" rel="noopener noreferrer">Voir l’emplacement sur la carte ↗</a>
+
+      <section class="photo-section">
+        <h3>Photos avant intervention</h3>
+        <div class="photos">
+          @for (image of photos('Avant'); track image.id) {
+            <a [href]="imageUrl(image.url)" target="_blank" rel="noopener noreferrer"><img [src]="imageUrl(image.url)" alt="Photo avant intervention"></a>
+          }
+          @if (!photos('Avant').length) { <span class="meta">Aucune photo « avant ».</span> }
+        </div>
+      </section>
+
+      @if (mission.status !== 'À valider' && mission.status !== 'Terminée') {
+        <section class="action-box">
+          <h3>Photos d’intervention</h3>
+          <p class="meta">Choisissez jusqu’à cinq photos. Formats acceptés selon le serveur, 5 Mo maximum par fichier.</p>
+          <input type="file" accept="image/*" multiple (change)="onFilesSelected($event)" aria-label="Choisir des photos">
+          @if (selectedPhotos().length) {
+            <p class="meta">{{ selectedPhotos().length }} photo(s) sélectionnée(s)</p>
+            <div class="photo-buttons">
+              <button type="button" class="pg-btn pg-btn--outline" [disabled]="busy()" (click)="upload('Avant')">{{ uploadingKind() === 'Avant' ? 'Envoi…' : 'Ajouter photos avant' }}</button>
+              <button type="button" class="pg-btn pg-btn--outline" [disabled]="busy()" (click)="upload('Après')">{{ uploadingKind() === 'Après' ? 'Envoi…' : 'Ajouter photos après' }}</button>
+            </div>
+          }
+        </section>
+      }
+
+      <section class="photo-section">
+        <h3>Photos après intervention</h3>
+        <div class="photos">
+          @for (image of photos('Après'); track image.id) {
+            <a [href]="imageUrl(image.url)" target="_blank" rel="noopener noreferrer"><img [src]="imageUrl(image.url)" alt="Photo après intervention"></a>
+          }
+          @if (!photos('Après').length) { <span class="meta">Aucune photo « après ».</span> }
+        </div>
+      </section>
+
+      @if (mission.status !== 'À valider' && mission.status !== 'Terminée') {
+        <section class="action-box">
+          <h3>Compte rendu de l’intervention</h3>
+          <label for="work-report">Décrivez les travaux effectués</label>
+          <textarea id="work-report" [ngModel]="workReport()" (ngModelChange)="workReport.set($event)" rows="6" maxlength="5000" placeholder="Travaux réalisés, matériel utilisé, état de la zone…"></textarea>
+          <div class="report-actions">
+            @if (mission.status === 'Affectée') {
+              <button type="button" class="pg-btn pg-btn--outline" [disabled]="busy()" (click)="start()">Démarrer la mission</button>
+            }
+            <button type="button" class="pg-btn pg-btn--outline" [disabled]="busy()" (click)="saveReport()">Enregistrer le compte rendu</button>
+            <button type="button" class="pg-btn pg-btn--primary" [disabled]="busy() || !workReport().trim()" (click)="submit()">Soumettre à validation</button>
+          </div>
+        </section>
+      } @else {
+        <section class="action-box">
+          <h3>Compte rendu</h3>
+          <p>{{ mission.work_report || 'Aucun compte rendu.' }}</p>
+          @if (mission.status === 'À valider') { <p class="meta">La mission a été transmise à l’organisme pour validation.</p> }
+        </section>
+      }
+    </section>
+  </div>
+}
+
+<app-site-footer />
