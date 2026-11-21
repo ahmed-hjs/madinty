@@ -46,5 +46,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/citoyen/mes-signalements.component').then((m) => m.MesSignalementsComponent),
   },
+  {
+    path: 'organisme',
+    title: 'Espace organisme — MADINTY',
+    canActivate: [roleGuard('organization')],
+    loadComponent: () =>
+      import('./features/organisme/organisme.component').then((m) => m.OrganismeComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

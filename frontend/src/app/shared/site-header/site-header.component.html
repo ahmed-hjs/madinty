@@ -12,6 +12,9 @@
     <a routerLink="/organismes" routerLinkActive="active">Organismes</a>
     <a routerLink="/comment-ca-marche" routerLinkActive="active">Comment ça marche</a>
     <a routerLink="/contact" routerLinkActive="active">Contact</a>
+    @if (auth.user()?.role === 'organization') {
+      <a routerLink="/organisme" routerLinkActive="active">Mon organisme</a>
+    }
   </nav>
 
   <div class="actions">

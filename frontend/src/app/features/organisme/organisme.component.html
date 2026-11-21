@@ -1,0 +1,227 @@
+<app-site-header />
+
+<main class="pg-main organisme">
+  <div class="top">
+    <div>
+      <p class="pg-eyebrow">Espace organisme</p>
+      <h1 class="pg-title">{{ indicators()?.perimetre || 'Gestion des signalements' }}</h1>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Sections de l’espace organisme">
+    <button type="button" [class.on]="tab() === 'dashboard'" [attr.aria-selected]="tab() === 'dashboard'" (click)="setTab('dashboard')">Tableau de bord</button>
+    <button type="button" [class.on]="tab() === 'reports'" [attr.aria-selected]="tab() === 'reports'" (click)="setTab('reports')">Signalements</button>
+    <button type="button" [class.on]="tab() === 'interventions'" [attr.aria-selected]="tab() === 'interventions'" (click)="setTab('interventions')">Interventions</button>
+    <button type="button" [class.on]="tab() === 'contests'" [attr.aria-selected]="tab() === 'contests'" (click)="setTab('contests')">Contestations</button>
+  </div>
+
+  @if (actionError(); as e) { <p class="err" role="alert">{{ e }}</p> }
+
+  @if (loading()) {
+    <p class="pg-state" role="status">Chargement…</p>
+  } @else if (error(); as e) {
+    <div class="pg-state" role="alert">
+      <p>{{ e }}</p>
+      <button type="button" class="pg-btn pg-btn--outline" (click)="load()">Réessayer</button>
+    </div>
+  } @else {
+    @if (tab() === 'dashboard') {
+      @if (indicators(); as k) {
+        <section class="kpis" aria-label="Indicateurs">
+          <article class="pg-card kpi"><strong>{{ k.total }}</strong><span>Signalements reçus</span></article>
+          <article class="pg-card kpi"><strong>{{ k.a_examiner }}</strong><span>À examiner</span></article>
+          <article class="pg-card kpi"><strong>{{ k.en_cours }}</strong><span>En cours</span></article>
+          <article class="pg-card kpi"><strong>{{ k.taux_resolution }}%</strong><span>Taux de résolution</span></article>
+          <article class="pg-card kpi"><strong>{{ k.delai_moyen_jours ?? '—' }} j</strong><span>Délai moyen</span></article>
+          <article class="pg-card kpi"><strong>{{ k.taux_contestation }}%</strong><span>Taux de contestation</span></article>
+        </section>
+        <div class="dashboard-grid">
+          <section class="pg-card">
+            <h2 class="pg-h2">Évolution sur {{ k.periode }}</h2>
+            <div class="bars">
+              @for (m of k.par_mois; track m.mois) {
+                <div class="bar-row"><span>{{ m.mois }}</span><div class="bar-track"><i [style.width.%]="k.total ? (m.recus / k.total * 100) : 0"></i></div><b>{{ m.recus }} reçus</b></div>
+              }
+            </div>
+          </section>
+          <section class="pg-card">
+            <h2 class="pg-h2">Par catégorie</h2>
+            <div class="category-list">
+              @for (c of k.par_categorie; track c.label) {
+                <div><span>{{ c.label }}</span><b>{{ c.resolus }}/{{ c.total }}</b></div>
+              }
+            </div>
+            <p class="note">{{ k.note }}</p>
+          </section>
+        </div>
+      }
+    }
+
+    @if (tab() === 'reports') {
+      <section class="filters" aria-label="Filtres des signalements">
+        <input type="search" [(ngModel)]="search" (ngModelChange)="reloadReports()" placeholder="Rechercher une référence, adresse ou titre" aria-label="Rechercher">
+        <select [(ngModel)]="statusFilter" (ngModelChange)="reloadReports()" aria-label="Filtrer par statut">
+          <option value="">Tous les statuts</option>
+          <option>Soumis</option><option>En vérification</option><option>Accepté</option><option>Affecté</option>
+          <option>En cours</option><option>Résolu</option><option>Clos</option><option>Rejeté</option>
+        </select>
+      </section>
+      @if (reports().length === 0) {
+        <p class="pg-state">Aucun signalement ne correspond à ces filtres.</p>
+      }
+      <ul class="list">
+        @for (r of reports(); track r.id) {
+          <li class="pg-card item">
+            <button type="button" class="main" (click)="openReport(r)">
+              <strong>{{ r.title }}</strong>
+              <span class="meta">#{{ r.reference }} · {{ r.category_label }} · {{ ago(r.created_at) }}</span>
+              <span class="meta">♥ {{ r.supports_count }} soutiens</span>
+            </button>
+            <div class="side">
+              <span [class]="'pill-status st-' + statusId(r.status)">{{ r.status }}</span>
+              @if (r.priority) { <span class="priority">{{ r.priority }}</span> }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (tab() === 'interventions') {
+      <section class="filters">
+        <select [(ngModel)]="interventionFilter" (ngModelChange)="reloadInterventions()" aria-label="Filtrer les interventions">
+          <option value="">Toutes les interventions</option>
+          <option>Affectée</option><option>En cours</option><option>À valider</option><option>Terminée</option>
+        </select>
+      </section>
+      @if (interventions().length === 0) { <p class="pg-state">Aucune intervention dans cette vue.</p> }
+      <ul class="list">
+        @for (i of interventions(); track i.id) {
+          <li class="pg-card item">
+            <button type="button" class="main" (click)="openIntervention(i)">
+              <strong>{{ i.reference }} · {{ i.title }}</strong>
+              <span class="meta">#{{ i.report_reference }} · {{ i.team_name || 'Équipe non définie' }}</span>
+              @if (i.planned_date) { <span class="meta">Prévue le {{ i.planned_date | date:'dd/MM/yyyy' }}</span> }
+            </button>
+            <span [class]="'pill-status st-' + statusId(i.status)">{{ i.status }}</span>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (tab() === 'contests') {
+      <section class="filters">
+        <select [(ngModel)]="contestFilter" (ngModelChange)="reloadContests()" aria-label="Filtrer les contestations">
+          <option value="a_examiner">À examiner</option>
+          <option value="traitees">Traitées</option>
+        </select>
+      </section>
+      @if (contests().length === 0) { <p class="pg-state">Aucune contestation dans cette vue.</p> }
+      <ul class="list">
+        @for (c of contests(); track c.id) {
+          <li class="pg-card contest">
+            <div>
+              <strong>{{ c.title }}</strong>
+              <span class="meta">#{{ c.report_reference }} · {{ ago(c.created_at) }}</span>
+              <p>{{ c.message }}</p>
+              @if (c.work_report) { <p class="note"><b>Compte rendu :</b> {{ c.work_report }}</p> }
+            </div>
+            @if (!c.decision) {
+              <div class="contest-actions">
+                <input type="text" [(ngModel)]="decisionComment" placeholder="Motif ou commentaire officiel" [attr.aria-label]="'Commentaire pour ' + c.report_reference">
+                <button type="button" class="pg-btn pg-btn--primary" [disabled]="busy()" (click)="decideContestation(c, { decision: 'Acceptée', reason: decisionComment })">Accepter</button>
+                <button type="button" class="pg-btn pg-btn--outline" [disabled]="busy()" (click)="decideContestation(c, { decision: 'Rejetée', reason: decisionComment })">Rejeter</button>
+                <button type="button" class="escalate" [disabled]="busy()" (click)="decideContestation(c, { escalate: true })">Saisir l’administration</button>
+              </div>
+            } @else {
+              <span class="priority">{{ c.decision }} · {{ c.decision_reason }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+</main>
+
+@if (selectedReport(); as r) {
+  <div class="backdrop" (click)="closeReport()">
+    <section class="drawer" role="dialog" aria-modal="true" aria-label="Détail du signalement" (click)="$event.stopPropagation()">
+      <button type="button" class="close" (click)="closeReport()" aria-label="Fermer">×</button>
+      <p class="pg-eyebrow">#{{ r.reference }}</p>
+      <h2>{{ r.title }}</h2>
+      <p class="meta">{{ r.category_label }} · {{ r.address || 'Adresse non renseignée' }}</p>
+      <p>{{ r.description }}</p>
+      <span [class]="'pill-status st-' + statusId(r.status)">{{ r.status }}</span>
+      @if (r.possible_duplicates.length) {
+        <p class="note"><b>Doubles possibles :</b> @for (d of r.possible_duplicates; track d.id) { {{ d.reference }} ({{ d.distance_m }} m)@if (!$last) {, } }</p>
+      }
+
+      @if (r.status === 'Soumis' || r.status === 'En vérification') {
+        <div class="action-box">
+          <h3>Décision</h3>
+          <textarea [(ngModel)]="decisionComment" rows="3" placeholder="Commentaire pour le citoyen"></textarea>
+          @if (r.status === 'Soumis') { <button type="button" class="pg-btn pg-btn--outline" [disabled]="busy()" (click)="decideReport('verify')">Passer en vérification</button> }
+          <button type="button" class="pg-btn pg-btn--primary" [disabled]="busy()" (click)="decideReport('accept')">Accepter</button>
+          <select [(ngModel)]="rejectReason" aria-label="Motif de rejet">
+            @for (reason of rejectionReasons; track reason) { <option [value]="reason">{{ reason }}</option> }
+          </select>
+          <button type="button" class="reject" [disabled]="busy()" (click)="decideReport('reject')">Rejeter</button>
+        </div>
+      }
+
+      @if (r.status !== 'Clos' && r.status !== 'Rejeté') {
+        <div class="action-box">
+          <h3>Priorité</h3>
+          <select [(ngModel)]="priority" aria-label="Priorité">
+            @for (p of priorities; track p) { <option [value]="p">{{ p }}</option> }
+          </select>
+          <input type="text" [(ngModel)]="justification" placeholder="Justification obligatoire">
+          <button type="button" class="pg-btn pg-btn--outline" [disabled]="busy()" (click)="updatePriority()">Enregistrer la priorité</button>
+        </div>
+      }
+
+      @if (r.status === 'Accepté') {
+        <div class="action-box">
+          <h3>Affecter une équipe</h3>
+          <select [(ngModel)]="assignTeamId" aria-label="Équipe">
+            @for (t of teams(); track t.id) { <option [ngValue]="t.id">{{ t.name }} · {{ t.lead_name || 'Responsable absent' }}</option> }
+          </select>
+          <input type="date" [(ngModel)]="plannedDate" aria-label="Date prévue">
+          <textarea [(ngModel)]="assignInstructions" rows="3" placeholder="Instructions pour l’équipe"></textarea>
+          <button type="button" class="pg-btn pg-btn--primary" [disabled]="busy() || !assignTeamId" (click)="assignIntervention()">Créer l’intervention</button>
+        </div>
+      }
+
+      @if (r.history?.length) {
+        <div class="history">
+          <h3>Historique</h3>
+          @for (h of r.history; track h.created_at) { <p><b>{{ h.new_status }}</b> · {{ h.actor }} · {{ ago(h.created_at) }}<br><span>{{ h.comment }}</span></p> }
+        </div>
+      }
+    </section>
+  </div>
+}
+
+@if (selectedIntervention(); as i) {
+  <div class="backdrop" (click)="closeIntervention()">
+    <section class="drawer" role="dialog" aria-modal="true" aria-label="Détail de l’intervention" (click)="$event.stopPropagation()">
+      <button type="button" class="close" (click)="closeIntervention()" aria-label="Fermer">×</button>
+      <p class="pg-eyebrow">{{ i.reference }}</p>
+      <h2>{{ i.report.title }}</h2>
+      <p class="meta">{{ i.report.category_label }} · {{ i.report.address || 'Adresse non renseignée' }}</p>
+      <span [class]="'pill-status st-' + statusId(i.status)">{{ i.status }}</span>
+      <h3>Compte rendu</h3>
+      <p>{{ i.work_report || 'Aucun compte rendu soumis.' }}</p>
+      @if (i.instructions) { <p class="note"><b>Instructions :</b> {{ i.instructions }}</p> }
+      @if (i.status === 'À valider') {
+        <div class="action-box">
+          <h3>Validation</h3>
+          <textarea [(ngModel)]="decisionComment" rows="3" placeholder="Commentaire pour l’équipe"></textarea>
+          <button type="button" class="pg-btn pg-btn--primary" [disabled]="busy()" (click)="validateIntervention(true)">Valider</button>
+          <button type="button" class="reject" [disabled]="busy()" (click)="validateIntervention(false)">Renvoyer à l’équipe</button>
+        </div>
+      }
+    </section>
+  </div>
+}
+
+<app-site-footer />
