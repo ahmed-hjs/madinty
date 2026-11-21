@@ -1,0 +1,269 @@
+<app-site-header />
+
+<main class="pg-main admin">
+  <div class="top">
+    <div>
+      <p class="pg-eyebrow">Espace administration</p>
+      <h1 class="pg-title">Administration</h1>
+      <p class="pg-lead">Gestion des comptes, catégories, paramètres et contestations signalées à l’administration.</p>
+    </div>
+    <button type="button" class="pg-btn pg-btn--outline" [disabled]="loading()" (click)="load()">Actualiser</button>
+  </div>
+
+  <nav class="tabs" aria-label="Sections d’administration">
+    <button type="button" [class.on]="tab() === 'overview'" [attr.aria-current]="tab() === 'overview' ? 'page' : null" (click)="setTab('overview')">Vue d’ensemble</button>
+    <button type="button" [class.on]="tab() === 'users'" [attr.aria-current]="tab() === 'users' ? 'page' : null" (click)="setTab('users')">Utilisateurs</button>
+    <button type="button" [class.on]="tab() === 'organizations'" [attr.aria-current]="tab() === 'organizations' ? 'page' : null" (click)="setTab('organizations')">Organismes</button>
+    <button type="button" [class.on]="tab() === 'categories'" [attr.aria-current]="tab() === 'categories' ? 'page' : null" (click)="setTab('categories')">Catégories</button>
+    <button type="button" [class.on]="tab() === 'contests'" [attr.aria-current]="tab() === 'contests' ? 'page' : null" (click)="setTab('contests')">
+      Contestations @if (contests().length) { <span class="badge">{{ contests().length }}</span> }
+    </button>
+    <button type="button" [class.on]="tab() === 'settings'" [attr.aria-current]="tab() === 'settings' ? 'page' : null" (click)="setTab('settings')">Paramètres</button>
+    <button type="button" [class.on]="tab() === 'audit'" [attr.aria-current]="tab() === 'audit' ? 'page' : null" (click)="setTab('audit')">Journal d’audit</button>
+  </nav>
+
+  @if (actionError(); as message) { <p class="error" role="alert">{{ message }}</p> }
+  @if (notice(); as message) { <p class="notice" role="status">{{ message }}</p> }
+
+  @if (loading()) {
+    <p class="pg-state" role="status">Chargement de l’espace administration…</p>
+  } @else if (error(); as message) {
+    <div class="pg-state" role="alert">
+      <p>{{ message }}</p>
+      <button type="button" class="pg-btn pg-btn--outline" (click)="load()">Réessayer</button>
+    </div>
+  } @else {
+    @if (tab() === 'overview') {
+      @if (dashboard(); as data) {
+        <section class="summary" aria-label="Indicateurs globaux">
+          <article class="pg-card metric"><strong>{{ signalementTotal() }}</strong><span>Signalements</span></article>
+          <article class="pg-card metric"><strong>{{ data.utilisateurs_par_role['Citoyen'] || 0 }}</strong><span>Citoyens</span></article>
+          <article class="pg-card metric"><strong>{{ data.utilisateurs_par_role['Organisme'] || 0 }}</strong><span>Comptes organisme</span></article>
+          <article class="pg-card metric warning"><strong>{{ data.contestations_a_examiner }}</strong><span>Contestations à examiner</span></article>
+        </section>
+        <div class="overview-grid">
+          <section class="pg-card">
+            <h2 class="pg-h2">Signalements par statut</h2>
+            <div class="stat-list">
+              @for (entry of data.signalements_par_statut | keyvalue; track entry.key) {
+                <div><span>{{ entry.key }}</span><b>{{ entry.value }}</b></div>
+              }
+            </div>
+          </section>
+          <section class="pg-card">
+            <h2 class="pg-h2">Comptes par rôle</h2>
+            <div class="stat-list">
+              @for (role of roles; track role) {
+                <div><span>{{ role }}</span><b>{{ usersByRole()[role] }}</b></div>
+              }
+            </div>
+          </section>
+        </div>
+        <section class="pg-card quick">
+          <h2 class="pg-h2">Accès rapide</h2>
+          <button type="button" class="pg-btn pg-btn--primary" (click)="setTab('contests')">Examiner les contestations</button>
+          <button type="button" class="pg-btn pg-btn--outline" (click)="setTab('users')">Gérer les utilisateurs</button>
+          <button type="button" class="pg-btn pg-btn--outline" (click)="setTab('categories')">Gérer les catégories</button>
+        </section>
+      }
+    }
+
+    @if (tab() === 'users') {
+      <section class="pg-card create-card">
+        <div class="section-heading">
+          <div><h2 class="pg-h2">Créer un compte</h2><p class="muted">Les comptes créés sont actifs dès leur création.</p></div>
+        </div>
+        <form class="form-grid" (ngSubmit)="createUser()">
+          <label>Nom complet<input name="full_name" [(ngModel)]="newUser.full_name" required minlength="2" maxlength="255" autocomplete="name"></label>
+          <label>E-mail<input name="email" type="email" [(ngModel)]="newUser.email" required maxlength="255" autocomplete="email"></label>
+          <label>Mot de passe<input name="password" type="password" [(ngModel)]="newUser.password" required minlength="8" pattern="(?=.*[A-Z])(?=.*[0-9]).{8,72}" autocomplete="new-password" aria-describedby="password-hint"></label>
+          <label>Rôle
+            <select name="role" [(ngModel)]="newUser.role" required>
+              @for (role of roles; track role) { <option [value]="role">{{ role }}</option> }
+            </select>
+          </label>
+          @if (newUser.role === 'Organisme' || newUser.role === "Responsable d'équipe") {
+            <label>Organisme
+              <select name="organization_id" [(ngModel)]="newUser.organization_id" required>
+                <option [ngValue]="null" disabled>Choisir un organisme</option>
+                @for (organization of organizations(); track organization.id) { <option [ngValue]="organization.id">{{ organization.name }}</option> }
+              </select>
+            </label>
+          }
+          <p id="password-hint" class="hint">8 caractères minimum, avec au moins une majuscule et un chiffre.</p>
+          <button type="submit" class="pg-btn pg-btn--primary" [disabled]="busy()">Créer le compte</button>
+        </form>
+      </section>
+
+      <section class="list-section">
+        <div class="section-heading">
+          <div><h2 class="pg-h2">Comptes utilisateurs</h2><p class="muted">{{ visibleUsers().length }} compte(s)</p></div>
+          <div class="filters">
+            <input type="search" aria-label="Rechercher un utilisateur" placeholder="Nom, e-mail ou organisme" [ngModel]="userSearch()" (ngModelChange)="userSearch.set($event)">
+            <select aria-label="Filtrer par rôle" [ngModel]="userRole()" (ngModelChange)="userRole.set($event)">
+              <option value="">Tous les rôles</option>
+              @for (role of roles; track role) { <option [value]="role">{{ role }}</option> }
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Organisme</th><th>État</th><th>Créé le</th></tr></thead>
+            <tbody>
+              @for (user of visibleUsers(); track user.id) {
+                <tr>
+                  <td><strong>{{ user.full_name }}</strong><span class="subline">{{ user.email }} @if (isCurrentUser(user)) { · Vous }</span></td>
+                  <td><select [ngModel]="user.role" [ngModelOptions]="{standalone: true}" [disabled]="busy() || isCurrentUser(user)" [attr.aria-label]="'Rôle de ' + user.full_name" (ngModelChange)="updateUser(user, {role: $event})">
+                    @for (role of roles; track role) { <option [value]="role">{{ role }}</option> }
+                  </select></td>
+                  <td>{{ user.organization_name || '—' }}</td>
+                  <td><select [ngModel]="user.state" [ngModelOptions]="{standalone: true}" [disabled]="busy() || isCurrentUser(user)" [attr.aria-label]="'État de ' + user.full_name" (ngModelChange)="updateUser(user, {state: $event})">
+                    @for (state of states; track state) { <option [value]="state">{{ state }}</option> }
+                  </select></td>
+                  <td>{{ user.created_at | date:'dd/MM/yyyy' }}</td>
+                </tr>
+              }
+              @if (!visibleUsers().length) { <tr><td colspan="5" class="empty-row">Aucun utilisateur trouvé.</td></tr> }
+            </tbody>
+          </table>
+        </div>
+        <p class="hint">Votre propre rôle et votre compte ne peuvent pas être modifiés depuis cette page.</p>
+      </section>
+    }
+
+    @if (tab() === 'organizations') {
+      <section class="list-section">
+        <div class="section-heading"><div><h2 class="pg-h2">Organismes enregistrés</h2><p class="muted">Vue consultative des organismes rattachés à la plateforme.</p></div></div>
+        <div class="org-grid">
+          @for (organization of organizations(); track organization.id) {
+            <article class="pg-card organization">
+              <span class="org-icon" aria-hidden="true">{{ organization.name.slice(0, 1) }}</span>
+              <div><h3>{{ organization.name }}</h3><p class="muted">{{ organization.type || 'Type non précisé' }}</p>
+                <div class="org-stats"><span>{{ organization.teams }} équipes</span><span>{{ organization.categories }} catégories</span></div>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    @if (tab() === 'categories') {
+      <section class="pg-card create-card">
+        <h2 class="pg-h2">Ajouter une catégorie</h2>
+        <form class="form-grid category-form" (ngSubmit)="createCategory()">
+          <label>Libellé<input name="category_label" [(ngModel)]="newCategory.label" required minlength="2" maxlength="255"></label>
+          <label>Organisme responsable
+            <select name="category_organization" [(ngModel)]="newCategory.organization_id" required>
+              <option [ngValue]="null" disabled>Choisir un organisme</option>
+              @for (organization of organizations(); track organization.id) { <option [ngValue]="organization.id">{{ organization.name }}</option> }
+            </select>
+          </label>
+          <label>Poids de gravité<input name="severity_weight" type="number" min="0" max="5" step="0.1" [(ngModel)]="newCategory.severity_weight"></label>
+          <label>Poids de risque<input name="risk_weight" type="number" min="0" max="5" step="0.1" [(ngModel)]="newCategory.risk_weight"></label>
+          <label class="wide">Description<textarea name="category_description" rows="2" [(ngModel)]="newCategory.description"></textarea></label>
+          <button type="submit" class="pg-btn pg-btn--primary" [disabled]="busy() || !newCategory.organization_id">Ajouter la catégorie</button>
+        </form>
+      </section>
+
+      <section class="list-section">
+        <div class="section-heading"><div><h2 class="pg-h2">Catégories</h2><p class="muted">Activez ou désactivez leur disponibilité pour les nouveaux signalements.</p></div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Catégorie</th><th>Organisme</th><th>Gravité</th><th>Risque</th><th>État</th><th>Actions</th></tr></thead>
+            <tbody>
+              @for (category of categories(); track category.id) {
+                <tr>
+                  <td><strong>{{ category.label }}</strong><span class="subline">{{ category.description || 'Sans description' }}</span></td>
+                  <td>{{ category.organization_name }}</td><td>{{ category.severity_weight }}</td><td>{{ category.risk_weight }}</td>
+                  <td><span [class]="category.is_active ? 'state active' : 'state inactive'">{{ category.is_active ? 'Active' : 'Inactive' }}</span></td>
+                  <td class="actions">
+                    <button type="button" class="small-btn" [disabled]="busy()" (click)="editCategory(category)">Modifier</button>
+                    <button type="button" class="small-btn" [disabled]="busy()" (click)="toggleCategory(category)">{{ category.is_active ? 'Désactiver' : 'Réactiver' }}</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @if (tab() === 'contests') {
+      <section class="list-section">
+        <div class="section-heading"><div><h2 class="pg-h2">Contestations escaladées</h2><p class="muted">Décidez uniquement des contestations transmises par un organisme.</p></div></div>
+        @if (!contests().length) { <p class="pg-state">Aucune contestation en attente pour l’administration.</p> }
+        <div class="contest-list">
+          @for (contest of contests(); track contest.id) {
+            <article class="pg-card contest">
+              <div class="contest-head"><div><span class="ref">#{{ contest.report_reference }}</span><h3>{{ contest.title }}</h3></div><span class="state pending">À examiner</span></div>
+              <p class="message">{{ contest.message }}</p>
+              <p class="muted">Transmise le {{ contest.created_at | date:'dd/MM/yyyy à HH:mm' }}</p>
+              <label>Motif de la décision<textarea rows="3" maxlength="1000" [ngModel]="contestReason(contest.id)" (ngModelChange)="setContestationReason(contest.id, $event)" [attr.aria-label]="'Motif pour le signalement ' + contest.report_reference" placeholder="Expliquez la décision qui sera communiquée au citoyen."></textarea></label>
+              <div class="contest-actions">
+                <button type="button" class="pg-btn pg-btn--primary" [disabled]="busy() || !contestReason(contest.id).trim()" (click)="decideContestation(contest, 'Acceptée')">Accepter la contestation</button>
+                <button type="button" class="pg-btn pg-btn--outline" [disabled]="busy() || !contestReason(contest.id).trim()" (click)="decideContestation(contest, 'Rejetée')">Rejeter la contestation</button>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    @if (tab() === 'settings') {
+      <section class="pg-card setting-card">
+        <div><h2 class="pg-h2">Délai de contestation</h2><p class="muted">Durée après la résolution pendant laquelle un citoyen peut contester, exprimée en minutes.</p></div>
+        <form class="setting-form" (ngSubmit)="saveContestDelay()">
+          <label for="contest-delay">Délai en minutes</label>
+          <input id="contest-delay" name="contest_delay" type="number" min="1" max="525600" step="1" required [(ngModel)]="contestDelayMinutes">
+          <span class="muted">Soit environ {{ (contestDelayMinutes / 1440) | number:'1.0-1' }} jour(s)</span>
+          <button type="submit" class="pg-btn pg-btn--primary" [disabled]="busy() || contestDelayMinutes < 1 || contestDelayMinutes > 525600">Enregistrer</button>
+        </form>
+        @for (setting of settings(); track setting.key) {
+          <p class="hint">Dernière mise à jour : {{ setting.updated_at | date:'dd/MM/yyyy HH:mm' }}</p>
+        }
+      </section>
+    }
+
+    @if (tab() === 'audit') {
+      <section class="list-section">
+        <div class="section-heading"><div><h2 class="pg-h2">Journal d’audit</h2><p class="muted">Les 100 actions les plus récentes enregistrées par la plateforme.</p></div></div>
+        @if (!auditLogs().length) { <p class="pg-state">Aucune action enregistrée.</p> }
+        <div class="audit-list">
+          @for (log of auditLogs(); track log.id) {
+            <article class="pg-card audit-item">
+              <div class="audit-top"><strong>{{ log.action }}</strong><time>{{ log.created_at | date:'dd/MM/yyyy HH:mm' }}</time></div>
+              <p>{{ log.actor || 'Compte supprimé' }} · {{ log.resource }} @if (log.resource_id !== null) { #{{ log.resource_id }} }</p>
+              @if (log.metadata && (log.metadata | json) !== '{}') { <code>{{ log.metadata | json }}</code> }
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+</main>
+
+@if (editingCategory(); as category) {
+  <div class="backdrop" (click)="closeCategoryEditor()">
+    <section class="dialog pg-card" role="dialog" aria-modal="true" aria-label="Modifier une catégorie" (click)="$event.stopPropagation()">
+      <button type="button" class="close" (click)="closeCategoryEditor()" aria-label="Fermer">×</button>
+      <p class="pg-eyebrow">Catégorie #{{ category.id }}</p>
+      <h2>Modifier la catégorie</h2>
+      <form class="form-grid" (ngSubmit)="saveCategory()">
+        <label>Libellé<input name="edit_label" [(ngModel)]="categoryDraft.label" required minlength="2" maxlength="255"></label>
+        <label>Organisme responsable
+          <select name="edit_organization" [(ngModel)]="categoryDraft.organization_id" required>
+            @for (organization of organizations(); track organization.id) { <option [ngValue]="organization.id">{{ organization.name }}</option> }
+          </select>
+        </label>
+        <label>Poids de gravité<input name="edit_severity" type="number" min="0" max="5" step="0.1" [(ngModel)]="categoryDraft.severity_weight"></label>
+        <label>Poids de risque<input name="edit_risk" type="number" min="0" max="5" step="0.1" [(ngModel)]="categoryDraft.risk_weight"></label>
+        <div class="dialog-actions">
+          <button type="button" class="pg-btn pg-btn--outline" (click)="closeCategoryEditor()">Annuler</button>
+          <button type="submit" class="pg-btn pg-btn--primary" [disabled]="busy()">Enregistrer</button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+<app-site-footer />

@@ -60,5 +60,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/terrain/terrain.component').then((m) => m.TerrainComponent),
   },
+  {
+    path: 'admin',
+    title: 'Administration — MADINTY',
+    canActivate: [roleGuard('admin')],
+    loadComponent: () =>
+      import('./features/admin/admin.component').then((m) => m.AdminComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

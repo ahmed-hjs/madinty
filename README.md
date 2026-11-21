@@ -32,9 +32,9 @@ Projet Web – Sup'Com, Groupe 4 (Haj Said Ahmed, Laouini Rawand), encadré par 
 | **Citoyen** | Nouveau signalement (photos, géolocalisation, détection de doublons), soutien d'un signalement, suivi (« Mes signalements »), confirmation ou contestation de la résolution, notifications |
 | **Organisme** | Tableau de bord, signalements reçus, acceptation / rejet motivé, priorité, affectation d’interventions, équipes, contestations, indicateurs |
 | **Terrain** | Missions affectées, démarrage, avancement, compte rendu, photos avant / après, soumission à validation |
-| **Administration** | Utilisateurs et rôles, catégories, paramètres (délai de contestation), journaux d'audit |
+| **Administration** | Tableau de bord, utilisateurs et rôles, organismes, catégories, paramètres (délai de contestation), contestations escaladées, journaux d'audit |
 
-> **Avancement du frontend :** les espaces **Public**, **Citoyen**, **Organisme** et **Terrain** sont disponibles. L’espace **Administration** reste à développer ; ses fonctionnalités principales existent côté API REST.
+> **Avancement du frontend :** les espaces **Public**, **Citoyen**, **Organisme**, **Terrain** et **Administration** sont disponibles. L’administration des organismes reste consultative ; leur création/modification n’est pas proposée par l’API actuelle.
 
 ## Choix techniques
 

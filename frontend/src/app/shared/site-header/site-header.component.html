@@ -18,6 +18,9 @@
     @if (auth.user()?.role === 'team_lead') {
       <a routerLink="/terrain" routerLinkActive="active">Mes missions</a>
     }
+    @if (auth.user()?.role === 'admin') {
+      <a routerLink="/admin" routerLinkActive="active">Administration</a>
+    }
   </nav>
 
   <div class="actions">
